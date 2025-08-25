@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  ocr-app:
+    build: .
+    container_name: paddleocr-app
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./models:/root/.paddleocr
+    environment:
+      - CUDA_VISIBLE_DEVICES=0
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
