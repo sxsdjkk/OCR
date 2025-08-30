@@ -1,5 +1,5 @@
 # Use NVIDIA CUDA base image for GPU support
-FROM nvidia/cuda:11.8-devel-ubuntu20.04
+FROM nvidia/cuda:12.4.0-base-ubuntu22.04
 
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive
@@ -19,8 +19,7 @@ RUN apt-get update && apt-get install -y \
     libxrender-dev \
     libgomp1 \
     libgl1-mesa-glx \
-    libglib2.0-0 \
-    libgthread-2.0-0 \
+    libglib2.0-dev \
     libgtk-3-0 \
     libavcodec-dev \
     libavformat-dev \
