@@ -5,12 +5,14 @@ services:
     build: .
     container_name: paddleocr-app
     ports:
-      - "8000:8000"
+      - "8008:8008"  # 修正端口映射
     volumes:
       - ./data:/app/data
       - ./models:/root/.paddleocr
+      - paddle_cache:/root/.paddlex  # 持久化 PaddleX 缓存
     environment:
       - CUDA_VISIBLE_DEVICES=0
+      - PADDLE_PDX_CACHE_HOME=/root/.paddlex
     deploy:
       resources:
         reservations:
@@ -19,3 +21,12 @@ services:
               count: 1
               capabilities: [gpu]
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8008/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  paddle_cache:  # 定义持久化卷

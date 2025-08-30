@@ -3,16 +3,23 @@ paddlepaddle-gpu>=3.0.0
 paddleocr>=2.7.0
 paddlex[ocr]>=3.0.0
 
-# Common dependencies for OCR projects
-opencv-python>=4.5.0
-numpy>=1.21.0
-pillow>=8.3.0
-matplotlib>=3.3.0
+# FastAPI and web framework dependencies
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+python-multipart>=0.0.6
+pydantic>=2.0.0
 
-# Web framework (optional)
-flask>=2.0.0
-fastapi>=0.68.0
-uvicorn>=0.15.0
+# Computer Vision and Image Processing
+opencv-python>=4.8.0
+numpy>=1.24.0
+pillow>=10.0.0
+matplotlib>=3.7.0
 
-# Utilities
-requests>=2.25.0
+# Utilities and HTTP
+requests>=2.31.0
+aiofiles>=23.0.0
+
+# Development and testing (optional)
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+httpx>=0.25.0

@@ -44,7 +44,7 @@ def test_paddleocr():
     
     print("Performing OCR...")
     # Perform OCR
-    result = ocr.ocr(test_image_path, cls=True)
+    result = ocr.ocr(test_image_path)
     
     print("\nOCR Results:")
     print("-" * 50)
