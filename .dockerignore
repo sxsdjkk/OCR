@@ -51,7 +51,7 @@ Thumbs.db
 
 # Project specific
 data/
-*.whl
+# *.whl  # 注释掉，允许 wheel 文件被复制
 app.log
 test_*.py
 README.md

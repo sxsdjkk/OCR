@@ -44,10 +44,23 @@ RUN python3 -m pip install --upgrade pip setuptools wheel
 # Set working directory
 WORKDIR /app
 
+# Download paddlepaddle wheel file if it doesn't exist
+RUN if [ ! -f "paddlepaddle_gpu-3.0.0-cp310-cp310-manylinux1_x86_64.whl" ]; then \
+        echo "Downloading paddlepaddle wheel file..." && \
+        wget -O paddlepaddle_gpu-3.0.0-cp310-cp310-manylinux1_x86_64.whl \
+        "https://paddle-whl.bj.bcebos.com/stable/cu118/paddlepaddle-gpu/paddlepaddle_gpu-3.0.0-cp310-cp310-manylinux1_x86_64.whl" && \
+        echo "Download completed successfully!"; \
+    else \
+        echo "PaddlePaddle wheel file already exists, skipping download."; \
+    fi
+
+# Install paddlepaddle wheel file
+RUN pip3 install --no-cache-dir paddlepaddle_gpu-3.0.0-cp310-cp310-manylinux1_x86_64.whl
+
 # Copy requirements file first for better caching
 COPY requirements.txt .
 
-# Install Python dependencies
+# Install Python dependencies (excluding paddlepaddle-gpu for now)
 RUN pip3 install --no-cache-dir -r requirements.txt
 
 # Copy application code

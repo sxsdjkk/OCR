@@ -6,6 +6,23 @@ set -e
 
 echo "🚀 开始构建 PaddleOCR Docker 镜像..."
 
+# 检查 wheel 文件
+WHEEL_FILE="paddlepaddle_gpu-3.0.0-cp310-cp310-manylinux1_x86_64.whl"
+if [ ! -f "$WHEEL_FILE" ]; then
+    echo "⚠️  警告: $WHEEL_FILE 不存在"
+    echo "📥 Docker 构建时会自动下载，但会延长构建时间"
+    echo "💡 建议先运行 ./manage_wheel.sh 下载文件"
+    read -p "是否继续构建？(y/n): " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "❌ 构建已取消"
+        exit 1
+    fi
+else
+    echo "✅ 找到 wheel 文件: $WHEEL_FILE"
+    echo "📊 文件大小: $(du -h "$WHEEL_FILE" | cut -f1)"
+fi
+
 # 构建镜像
 docker build -t paddleocr-app:latest .
 

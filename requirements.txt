@@ -1,5 +1,5 @@
 # PaddleOCR and related dependencies
-paddlepaddle-gpu>=3.0.0
+# paddlepaddle-gpu>=3.0.0  # Installed via wheel file in Dockerfile
 paddleocr>=2.7.0
 paddlex[ocr]>=3.0.0
 
