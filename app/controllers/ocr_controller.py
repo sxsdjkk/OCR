@@ -25,7 +25,7 @@ async def health_check():
     return {"status": "healthy", "service": "PaddleOCR"}
 
 
-@router.post('/ocr_structure/file')
+#@router.post('/ocr_structure/file')
 async def perform_ocr_structure_file(file: UploadFile = File(...)):
     """Perform OCR (structure).
 
@@ -80,7 +80,17 @@ async def perform_ocr_file(
 
 
 @router.post('/ocr_simple/base64')
-async def perform_ocr_base64(request: Base64ImageRequest):
+async def perform_ocr_base64(
+    request: Base64ImageRequest,
+    directionCorrection: bool = Query(
+        False,
+        description='为 true 时进行方向矫正并同步旋转 polys'
+    ),
+    needImg: bool = Query(
+        False,
+        description='为 true 或 1 时，在结果中附带 ImageBase64'
+    ),
+):
     """Perform OCR (simple) with base64 body.
 
     - body.image_base64: 必填，图片的 base64 字符串（不带 data URI 前缀）
@@ -91,9 +101,10 @@ async def perform_ocr_base64(request: Base64ImageRequest):
         image = base64_to_image(request.image_base64)
         if image is None:
             raise HTTPException(status_code=400, detail="Invalid image file")
-        structured = process_simple(image)
+        include_image = bool(needImg)
+        structured = process_simple(image, direction_correction=directionCorrection, include_image_info=include_image)
         elapsed = time.time() - start_time
-        logger.info(f"/ocr_simple/base64 耗时: {elapsed:.3f}s")
+        logger.info(f"/ocr_simple/base64 耗时: {elapsed:.3f}s (directionCorrection={directionCorrection}, needImg={include_image})")
         return JSONResponse(content=convert_numpy_to_list(structured))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
