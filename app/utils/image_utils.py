@@ -52,6 +52,7 @@ def _rotate_image_resize(image, angle_deg):
     new_height = max(new_height, 1)
 
     # 创建一个足够大的白色画布
+    print(f"DEBUG: 创建画布 - new_height={new_height}, new_width={new_width}")
     canvas = np.full((new_height, new_width, 3), 255, dtype=np.uint8)
 
     # 计算原图在新画布上的位置
@@ -69,6 +70,9 @@ def _rotate_image_resize(image, angle_deg):
 
     # 将原图复制到新画布中心
     try:
+        print(f"DEBUG: 复制图像 - canvas.shape={canvas.shape}, image.shape={image.shape}")
+        print(f"DEBUG: 偏移量 - x_offset={x_offset}, y_offset={y_offset}")
+        print(f"DEBUG: 目标切片 - [{y_offset}:{y_offset+height}, {x_offset}:{x_offset+width}]")
         canvas[y_offset:y_offset+height, x_offset:x_offset+width] = image
     except ValueError as e:
         print(f"Canvas shape: {canvas.shape}, Image shape: {image.shape}")
