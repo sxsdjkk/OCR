@@ -48,8 +48,8 @@ def _rotate_image_resize(image, angle_deg):
         new_height = int(height * cos_a + width * sin_a)
 
     # 确保最小尺寸，避免尺寸过小
-    new_width = max(new_width, width, height)
-    new_height = max(new_height, width, height)
+    new_width = max(new_width, 1)
+    new_height = max(new_height, 1)
 
     # 创建一个足够大的白色画布
     canvas = np.full((new_height, new_width, 3), 255, dtype=np.uint8)
