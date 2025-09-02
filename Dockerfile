@@ -69,7 +69,7 @@ COPY . .
 RUN mkdir -p /root/.paddleocr /root/.paddlex /app/data
 
 # Set permissions
-RUN chmod +x app.py start_server.py
+RUN chmod +x main.py start_server.py
 
 # Expose port for web applications
 EXPOSE 8008
