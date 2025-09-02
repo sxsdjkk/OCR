@@ -11,10 +11,10 @@ simple_ocr = PaddleOCR(
     use_doc_unwarping=False,
 )
 
-structure_ocr = PPStructureV3(
-    device="gpu",
-    use_chart_recognition=True,
-)
+# structure_ocr = PPStructureV3(
+#     device="gpu",
+#     use_chart_recognition=True,
+# )
 
 def _select_primary_boxes(rec_polys, rec_boxes, dt_polys):
     if rec_polys and len(rec_polys) > 0:
@@ -55,13 +55,23 @@ def _parse_predict_results(predict_results):
         rec_boxes = obj.get('rec_boxes') or []
         dt_polys = obj.get('dt_polys') or []
 
+
         rec_texts_all.extend(rec_texts if isinstance(rec_texts, list) else [])
         rec_scores_all.extend(rec_scores if isinstance(rec_scores, list) else [])
         rec_polys_all.extend(rec_polys if isinstance(rec_polys, list) else [])
         rec_boxes_all.extend(rec_boxes if isinstance(rec_boxes, list) else [])
         dt_polys_all.extend(dt_polys if isinstance(dt_polys, list) else [])
 
-    return rec_texts_all, rec_scores_all, rec_polys_all, rec_boxes_all, dt_polys_all
+        # 获取预处理角度
+        pre_angle = 0
+        try:
+            doc_preprocessor_res = obj.get('doc_preprocessor_res')
+            if doc_preprocessor_res and isinstance(doc_preprocessor_res, dict):
+                pre_angle = doc_preprocessor_res.get('angle', 0)
+        except Exception:
+            pre_angle = 0
+
+    return rec_texts_all, rec_scores_all, rec_polys_all, rec_boxes_all, dt_polys_all, pre_angle
 
 def _compute_rotation_angle_from_boxes(boxes, texts, scores):
     candidates = []
@@ -109,11 +119,14 @@ def _rotate_image_keep_size(image, angle_deg):
     return rotated_image
 
 def build_items_from_predict_results(predict_results, image=None, directionCorrection=False):
-    rec_texts, rec_scores, rec_polys, rec_boxes, dt_polys = _parse_predict_results(predict_results)
-    primary_boxes = _select_primary_boxes(rec_polys, rec_boxes, dt_polys)
-    rotation_angle = _compute_rotation_angle_from_boxes(primary_boxes, rec_texts, rec_scores)
+    rec_texts, rec_scores, rec_polys, rec_boxes, dt_polys, pre_angle = _parse_predict_results(predict_results)
+    if pre_angle != 0:
+        rotation_angle = pre_angle
+    else:
+        primary_boxes = _select_primary_boxes(rec_polys, rec_boxes, dt_polys)
+        rotation_angle = _compute_rotation_angle_from_boxes(primary_boxes, rec_texts, rec_scores)
 
-    if directionCorrection and image is not None and abs(rotation_angle) > 1.0:
+    if pre_angle == 0 and directionCorrection and image is not None and abs(rotation_angle) > 1.0:
         height, width = image.shape[:2]
         center = (width // 2, height // 2)
         image[:] = _rotate_image_keep_size(image, rotation_angle)
@@ -154,7 +167,7 @@ def build_items_from_predict_results(predict_results, image=None, directionCorre
         })
     if extracted:
         extracted[-1]['text'] = f"{extracted[-1]['text']}\n"
-    return extracted, rotation_angle
+    return extracted, rotation_angle, pre_angle
 
 def build_structured_response(extracted_text, image_width, image_height, angle=0, include_image_info=False, image_base64=None):
     details = []
@@ -188,19 +201,19 @@ def build_structured_response(extracted_text, image_width, image_height, angle=0
         structured["ImageInfo"][0]["ImageBase64"] = image_base64
     return structured
 
-def process_structure(image, direction_correction=False, include_image_info=False):
-    result = structure_ocr.predict(image)
-    items, rotation_angle = build_items_from_predict_results(result, image=image, directionCorrection=direction_correction)
-    h, w = image.shape[:2]
-    img_b64 = image_to_base64(image) if include_image_info else None
-    return build_structured_response(items, image_width=w, image_height=h, angle=rotation_angle, include_image_info=include_image_info, image_base64=img_b64)
+# def process_structure(image, direction_correction=False, include_image_info=False):
+#     result = structure_ocr.predict(image)
+#     items, rotation_angle = build_items_from_predict_results(result, image=image, directionCorrection=direction_correction)
+#     h, w = image.shape[:2]
+#     img_b64 = image_to_base64(image) if include_image_info else None
+#     return build_structured_response(items, image_width=w, image_height=h, angle=rotation_angle, include_image_info=include_image_info, image_base64=img_b64)
 
 def process_simple(image, direction_correction=False, include_image_info=False):
     result = simple_ocr.predict(image)
 
-    items, rotation_angle = build_items_from_predict_results(result, image=image, directionCorrection=direction_correction)
+    items, rotation_angle, pre_angle = build_items_from_predict_results(result, image=image, directionCorrection=direction_correction)
     h, w = image.shape[:2]
-    img_b64 = image_to_base64(image) if include_image_info else None
+    img_b64 = image_to_base64(image, pre_angle) if include_image_info else None
     return build_structured_response(items, image_width=w, image_height=h, angle=rotation_angle, include_image_info=include_image_info, image_base64=img_b64)
 
 

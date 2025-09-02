@@ -7,7 +7,7 @@ import logging
 
 from pydantic import BaseModel
 
-from app.services.ocr_service import process_simple, process_structure
+from app.services.ocr_service import process_simple
 from app.utils.image_utils import base64_to_image
 from app.utils.response_utils import convert_numpy_to_list
 
@@ -25,25 +25,25 @@ async def health_check():
     return {"status": "healthy", "service": "PaddleOCR"}
 
 
-@router.post('/ocr_structure/file')
-async def perform_ocr_structure_file(file: UploadFile = File(...)):
-    """Perform OCR (structure).
+# @router.post('/ocr_structure/file')
+# async def perform_ocr_structure_file(file: UploadFile = File(...)):
+#     """Perform OCR (structure).
 
-    - file: form-data 上传的图片文件
-    - 无额外查询参数
-    """
-    start_time = time.time()
-    try:
-        contents = await file.read()
-        image = cv2.imdecode(np.frombuffer(contents, np.uint8), cv2.IMREAD_COLOR)
-        if image is None:
-            raise HTTPException(status_code=400, detail="Invalid image file")
-        structured = process_structure(image)
-        elapsed = time.time() - start_time
-        logger.info(f"/ocr_structure/file 耗时: {elapsed:.3f}s")
-        return JSONResponse(content=convert_numpy_to_list(structured))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+#     - file: form-data 上传的图片文件
+#     - 无额外查询参数
+#     """
+#     start_time = time.time()
+#     try:
+#         contents = await file.read()
+#         image = cv2.imdecode(np.frombuffer(contents, np.uint8), cv2.IMREAD_COLOR)
+#         if image is None:
+#             raise HTTPException(status_code=400, detail="Invalid image file")
+#         structured = process_structure(image)
+#         elapsed = time.time() - start_time
+#         logger.info(f"/ocr_structure/file 耗时: {elapsed:.3f}s")
+#         return JSONResponse(content=convert_numpy_to_list(structured))
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post('/ocr_simple/file')
