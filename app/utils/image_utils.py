@@ -28,26 +28,27 @@ def _rotate_image_resize(image, angle_deg):
         return image
 
     height, width = image.shape[:2]
-    print(f"DEBUG: 开始旋转 - 原始尺寸: ({height}, {width}), 角度: {angle_deg}°")
 
-    # 直接使用 OpenCV 旋转，自动处理边界
-    center = (width // 2, height // 2)
+    # 标准化角度到 0-360 范围
+    angle_normalized = angle_deg % 360
+    
+    # 对于90度的倍数旋转，直接交换宽高
+    if abs(angle_normalized - 90) < 0.1 or abs(angle_normalized - 270) < 0.1:
+        new_width = height
+        new_height = width
+    elif abs(angle_normalized - 180) < 0.1 or abs(angle_normalized) < 0.1:
+        new_width = width
+        new_height = height
+    else:
+        # 对于非90度倍数的角度，使用三角函数计算
+        cos_a = abs(math.cos(math.radians(angle_deg)))
+        sin_a = abs(math.sin(math.radians(angle_deg)))
+        new_width = int(width * cos_a + height * sin_a)
+        new_height = int(height * cos_a + width * sin_a)
 
     # 计算旋转矩阵
+    center = (width // 2, height // 2)
     rotation_matrix = cv2.getRotationMatrix2D(center, angle_deg, 1.0)
-
-    # 计算旋转后的边界框
-    cos_a = abs(math.cos(math.radians(angle_deg)))
-    sin_a = abs(math.sin(math.radians(angle_deg)))
-
-    new_width = int(width * cos_a + height * sin_a)
-    new_height = int(height * cos_a + width * sin_a)
-
-    # 确保最小尺寸
-    new_width = max(new_width, width)
-    new_height = max(new_height, height)
-
-    print(f"DEBUG: 计算边界框 - new_width={new_width}, new_height={new_height}")
 
     # 调整旋转矩阵的平移部分，以适应新的画布尺寸
     rotation_matrix[0, 2] += (new_width - width) / 2
@@ -63,7 +64,7 @@ def _rotate_image_resize(image, angle_deg):
         borderValue=(255, 255, 255)  # 白色背景
     )
 
-    print(f"DEBUG: 旋转完成 - 结果尺寸: {rotated_image.shape}")
+
     return rotated_image
 
 
