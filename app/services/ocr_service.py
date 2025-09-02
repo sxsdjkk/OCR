@@ -1,5 +1,6 @@
 import math
 import cv2
+import numpy as np
 from paddleocr import PaddleOCR, PPStructureV3
 from app.utils.image_utils import image_to_base64
 from app.utils.geom_utils import ensure_quad_points, rotate_points
@@ -109,6 +110,7 @@ def _compute_rotation_angle_from_boxes(boxes, texts, scores):
     return 0.0
 
 def _rotate_image_keep_size(image, angle_deg):
+    """根据预处理角度旋转图像，保持原尺寸（可能裁剪）"""
     height, width = image.shape[:2]
     center = (width // 2, height // 2)
     rotation_matrix = cv2.getRotationMatrix2D(center, angle_deg, 1.0)
@@ -117,6 +119,49 @@ def _rotate_image_keep_size(image, angle_deg):
         flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_CONSTANT, borderValue=(255, 255, 255)
     )
     return rotated_image
+
+def _rotate_image_resize(image, angle_deg):
+    """根据预处理角度旋转图像，确保完整显示不裁剪"""
+    if abs(angle_deg) < 0.1:  # 如果角度很小，直接返回原图
+        return image
+
+    height, width = image.shape[:2]
+    angle_rad = abs(angle_deg) * math.pi / 180.0
+
+    # 计算旋转后需要的画布尺寸
+    # 使用更精确的边界框计算
+    cos_a = abs(math.cos(angle_rad))
+    sin_a = abs(math.sin(angle_rad))
+
+    new_width = int(width * cos_a + height * sin_a)
+    new_height = int(height * cos_a + width * sin_a)
+
+    # 创建一个足够大的白色画布
+    canvas = np.full((new_height, new_width, 3), 255, dtype=np.uint8)
+
+    # 计算原图在新画布上的位置（居中）
+    x_offset = (new_width - width) // 2
+    y_offset = (new_height - height) // 2
+
+    # 将原图复制到新画布中心
+    canvas[y_offset:y_offset+height, x_offset:x_offset+width] = image
+
+    # 以新画布的中心为旋转轴心进行旋转
+    center = (new_width // 2, new_height // 2)
+    rotation_matrix = cv2.getRotationMatrix2D(center, angle_deg, 1.0)
+
+    # 应用旋转变换
+    rotated_image = cv2.warpAffine(
+        canvas,
+        rotation_matrix,
+        (new_width, new_height),
+        flags=cv2.INTER_CUBIC,
+        borderMode=cv2.BORDER_CONSTANT,
+        borderValue=(255, 255, 255)
+    )
+
+    return rotated_image
+
 
 def build_items_from_predict_results(predict_results, image=None, directionCorrection=False):
     rec_texts, rec_scores, rec_polys, rec_boxes, dt_polys, pre_angle = _parse_predict_results(predict_results)
@@ -181,6 +226,10 @@ def build_structured_response(extracted_text, image_width, image_height, angle=0
             "Value": value,
         })
 
+    # 将角度转换为负数，为前端目标旋转角度，方便前端直接使用
+    angle = -angle
+    # 根据360度为周期，将角度转换为0-360度
+    angle = angle % 360
     structured = {
         "OcrInfo": [
             {
@@ -190,7 +239,7 @@ def build_structured_response(extracted_text, image_width, image_height, angle=0
         ],
         "ImageInfo": [
             {
-                "Angle": -angle,
+                "Angle": angle,
                 "Height": image_height,
                 "Width": image_width,
             }
@@ -212,8 +261,11 @@ def process_simple(image, direction_correction=False, include_image_info=False):
     result = simple_ocr.predict(image)
 
     items, rotation_angle, pre_angle = build_items_from_predict_results(result, image=image, directionCorrection=direction_correction)
+    if pre_angle != 0:
+        image = _rotate_image_resize(image, pre_angle)
+        h, w = image.shape[:2]
     h, w = image.shape[:2]
-    img_b64 = image_to_base64(image, pre_angle) if include_image_info else None
-    return build_structured_response(items, image_width=w, image_height=h, angle=rotation_angle, include_image_info=include_image_info, image_base64=img_b64)
+    img_b64 = image_to_base64(image) if include_image_info else None
+    return build_structured_response(items, image_width=w, image_height=h, angle=pre_angle if pre_angle != 0 else rotation_angle, include_image_info=include_image_info, image_base64=img_b64)
 
 
