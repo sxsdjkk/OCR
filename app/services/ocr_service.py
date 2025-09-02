@@ -1,20 +1,53 @@
 import math
 import cv2
+import time
 from paddleocr import PaddleOCR, PPStructureV3
 from app.utils.image_utils import image_to_base64
 from app.utils.geom_utils import ensure_quad_points, rotate_points
 
 
-simple_ocr = PaddleOCR(
-    device="gpu",
-    use_angle_cls=True,
-    use_doc_unwarping=False,
-)
+# 延迟加载的 OCR 实例
+_simple_ocr = None
+_structure_ocr = None
 
-structure_ocr = PPStructureV3(
-    device="gpu",
-    use_chart_recognition=True,
-)
+# 记录初始化时间
+_simple_ocr_init_time = None
+_structure_ocr_init_time = None
+
+
+def get_simple_ocr():
+    """延迟加载 simple OCR 实例"""
+    global _simple_ocr, _simple_ocr_init_time
+    if _simple_ocr is None:
+        start_time = time.time()
+        print("初始化 Simple OCR 模型...")
+        _simple_ocr = PaddleOCR(
+            device="gpu",
+            use_angle_cls=True,
+            use_doc_unwarping=False,
+            # 移除不必要的参数以加快初始化
+            show_log=False,
+        )
+        _simple_ocr_init_time = time.time() - start_time
+        print(f"Simple OCR 模型初始化完成，耗时: {_simple_ocr_init_time:.2f}秒")
+    return _simple_ocr
+
+
+def get_structure_ocr():
+    """延迟加载 structure OCR 实例"""
+    global _structure_ocr, _structure_ocr_init_time
+    if _structure_ocr is None:
+        start_time = time.time()
+        print("初始化 Structure OCR 模型...")
+        _structure_ocr = PPStructureV3(
+            device="gpu",
+            use_chart_recognition=True,
+            # 减少输出日志以加快初始化
+            show_log=False,
+        )
+        _structure_ocr_init_time = time.time() - start_time
+        print(f"Structure OCR 模型初始化完成，耗时: {_structure_ocr_init_time:.2f}秒")
+    return _structure_ocr
 
 def _select_primary_boxes(rec_polys, rec_boxes, dt_polys):
     if rec_polys and len(rec_polys) > 0:
@@ -189,14 +222,16 @@ def build_structured_response(extracted_text, image_width, image_height, angle=0
     return structured
 
 def process_structure(image, direction_correction=False, include_image_info=False):
-    result = structure_ocr.predict(image)
+    ocr = get_structure_ocr()
+    result = ocr.predict(image)
     items, rotation_angle = build_items_from_predict_results(result, image=image, directionCorrection=direction_correction)
     h, w = image.shape[:2]
     img_b64 = image_to_base64(image) if include_image_info else None
     return build_structured_response(items, image_width=w, image_height=h, angle=rotation_angle, include_image_info=include_image_info, image_base64=img_b64)
 
 def process_simple(image, direction_correction=False, include_image_info=False):
-    result = simple_ocr.predict(image)
+    ocr = get_simple_ocr()
+    result = ocr.predict(image)
 
     items, rotation_angle = build_items_from_predict_results(result, image=image, directionCorrection=direction_correction)
     h, w = image.shape[:2]
