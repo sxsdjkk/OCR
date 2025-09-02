@@ -30,39 +30,26 @@ def _rotate_image_resize(image, angle_deg):
     height, width = image.shape[:2]
     angle_rad = angle_deg * math.pi / 180.0
 
-    # 计算旋转后图像的边界框（通过四个角点）
-    # 图像的四个角点（相对于图像中心）
-    corners = [
-        [-width/2, -height/2],
-        [width/2, -height/2],
-        [width/2, height/2],
-        [-width/2, height/2]
-    ]
+    # 更简单可靠的边界框计算
+    # 对于旋转，新的尺寸就是宽高互换
+    if abs(abs(angle_deg) - 90) < 5 or abs(abs(angle_deg) - 270) < 5:
+        # 90度或270度旋转，宽高互换
+        new_width = height
+        new_height = width
+    elif abs(abs(angle_deg) - 180) < 5:
+        # 180度旋转，尺寸不变
+        new_width = width
+        new_height = height
+    else:
+        # 其他角度，使用几何计算
+        cos_a = abs(math.cos(angle_rad))
+        sin_a = abs(math.sin(angle_rad))
+        new_width = int(width * cos_a + height * sin_a)
+        new_height = int(height * cos_a + width * sin_a)
 
-    # 计算旋转后角点的位置
-    cos_a = math.cos(angle_rad)
-    sin_a = math.sin(angle_rad)
-
-    rotated_corners = []
-    for x, y in corners:
-        # 旋转变换
-        new_x = x * cos_a - y * sin_a
-        new_y = x * sin_a + y * cos_a
-        rotated_corners.append([new_x, new_y])
-
-    # 找到旋转后边界框的尺寸
-    min_x = min(x for x, y in rotated_corners)
-    max_x = max(x for x, y in rotated_corners)
-    min_y = min(y for x, y in rotated_corners)
-    max_y = max(y for x, y in rotated_corners)
-
-    # 计算新的画布尺寸
-    new_width = int(max_x - min_x)
-    new_height = int(max_y - min_y)
-
-    # 确保最小尺寸
-    new_width = max(new_width, width)
-    new_height = max(new_height, height)
+    # 确保最小尺寸，避免尺寸过小
+    new_width = max(new_width, width, height)
+    new_height = max(new_height, width, height)
 
     # 创建一个足够大的白色画布
     canvas = np.full((new_height, new_width, 3), 255, dtype=np.uint8)
