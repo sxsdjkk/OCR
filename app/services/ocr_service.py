@@ -175,29 +175,30 @@ def build_structured_response(extracted_text, image_width, image_height, angle=0
                 "Text": concatenated_text,
                 "Detail": details,
             }
-        ]
-    }
-    if include_image_info:
-        structured["ImageInfo"] = [
+        ],
+        "ImageInfo": [
             {
-                "Angle": angle,
+                "Angle": -angle,
                 "Height": image_height,
                 "Width": image_width,
-                "ImageBase64": image_base64
             }
         ]
+    }
+    # 仅当需要时才包含 ImageBase64
+    if include_image_info and image_base64 is not None:
+        structured["ImageInfo"][0]["ImageBase64"] = image_base64
     return structured
 
-def process_structure(image, include_image_info=False):
+def process_structure(image, direction_correction=False, include_image_info=False):
     result = structure_ocr.predict(image)
-    items, rotation_angle = build_items_from_predict_results(result, image=image, directionCorrection=include_image_info)
+    items, rotation_angle = build_items_from_predict_results(result, image=image, directionCorrection=direction_correction)
     h, w = image.shape[:2]
     img_b64 = image_to_base64(image) if include_image_info else None
     return build_structured_response(items, image_width=w, image_height=h, angle=rotation_angle, include_image_info=include_image_info, image_base64=img_b64)
 
-def process_simple(image, include_image_info=False):
+def process_simple(image, direction_correction=False, include_image_info=False):
     result = simple_ocr.predict(image)
-    items, rotation_angle = build_items_from_predict_results(result, image=image, directionCorrection=include_image_info)
+    items, rotation_angle = build_items_from_predict_results(result, image=image, directionCorrection=direction_correction)
     h, w = image.shape[:2]
     img_b64 = image_to_base64(image) if include_image_info else None
     return build_structured_response(items, image_width=w, image_height=h, angle=rotation_angle, include_image_info=include_image_info, image_base64=img_b64)
