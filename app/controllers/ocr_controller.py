@@ -25,7 +25,7 @@ async def health_check():
     return {"status": "healthy", "service": "PaddleOCR"}
 
 
-#@router.post('/ocr_structure/file')
+@router.post('/ocr_structure/file')
 async def perform_ocr_structure_file(file: UploadFile = File(...)):
     """Perform OCR (structure).
 
@@ -74,7 +74,7 @@ async def perform_ocr_file(
         structured = process_simple(image, direction_correction=directionCorrection, include_image_info=include_image)
         elapsed = time.time() - start_time
         logger.info(f"/ocr_simple/file 耗时: {elapsed:.3f}s (directionCorrection={directionCorrection}, needImg={include_image})")
-        return JSONResponse(content=structured)
+        return JSONResponse(content=convert_numpy_to_list(structured))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

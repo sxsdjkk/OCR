@@ -7,9 +7,8 @@ from app.utils.geom_utils import ensure_quad_points, rotate_points
 
 simple_ocr = PaddleOCR(
     device="gpu",
-    use_doc_orientation_classify=False,
+    use_angle_cls=False,
     use_doc_unwarping=False,
-    use_textline_orientation=False,
 )
 
 structure_ocr = PPStructureV3(
