@@ -28,27 +28,68 @@ def _rotate_image_resize(image, angle_deg):
         return image
 
     height, width = image.shape[:2]
-    angle_rad = abs(angle_deg) * math.pi / 180.0
+    angle_rad = angle_deg * math.pi / 180.0
 
-    # 计算旋转后需要的画布尺寸
-    # 使用更精确的边界框计算
-    cos_a = abs(math.cos(angle_rad))
-    sin_a = abs(math.sin(angle_rad))
+    # 计算旋转后图像的边界框（通过四个角点）
+    # 图像的四个角点（相对于图像中心）
+    corners = [
+        [-width/2, -height/2],
+        [width/2, -height/2],
+        [width/2, height/2],
+        [-width/2, height/2]
+    ]
 
-    new_width = int(width * cos_a + height * sin_a)
-    new_height = int(height * cos_a + width * sin_a)
+    # 计算旋转后角点的位置
+    cos_a = math.cos(angle_rad)
+    sin_a = math.sin(angle_rad)
+
+    rotated_corners = []
+    for x, y in corners:
+        # 旋转变换
+        new_x = x * cos_a - y * sin_a
+        new_y = x * sin_a + y * cos_a
+        rotated_corners.append([new_x, new_y])
+
+    # 找到旋转后边界框的尺寸
+    min_x = min(x for x, y in rotated_corners)
+    max_x = max(x for x, y in rotated_corners)
+    min_y = min(y for x, y in rotated_corners)
+    max_y = max(y for x, y in rotated_corners)
+
+    # 计算新的画布尺寸
+    new_width = int(max_x - min_x)
+    new_height = int(max_y - min_y)
+
+    # 确保最小尺寸
+    new_width = max(new_width, width)
+    new_height = max(new_height, height)
 
     # 创建一个足够大的白色画布
     canvas = np.full((new_height, new_width, 3), 255, dtype=np.uint8)
 
-    # 计算原图在新画布上的位置（居中）
-    x_offset = (new_width - width) // 2
-    y_offset = (new_height - height) // 2
+    # 计算原图在新画布上的位置
+    # 需要考虑旋转后图像的偏移
+    center_x = new_width // 2
+    center_y = new_height // 2
+
+    # 将原图放置在画布中心
+    x_offset = center_x - width // 2
+    y_offset = center_y - height // 2
+
+    # 确保偏移量合理
+    x_offset = max(0, min(x_offset, new_width - width))
+    y_offset = max(0, min(y_offset, new_height - height))
 
     # 将原图复制到新画布中心
-    canvas[y_offset:y_offset+height, x_offset:x_offset+width] = image
+    try:
+        canvas[y_offset:y_offset+height, x_offset:x_offset+width] = image
+    except ValueError as e:
+        print(f"Canvas shape: {canvas.shape}, Image shape: {image.shape}")
+        print(f"x_offset: {x_offset}, y_offset: {y_offset}")
+        print(f"Target slice: {y_offset}:{y_offset+height}, {x_offset}:{x_offset+width}")
+        raise e
 
-    # 以新画布的中心为旋转轴心进行旋转
+    # 以画布中心为旋转轴心进行旋转
     center = (new_width // 2, new_height // 2)
     rotation_matrix = cv2.getRotationMatrix2D(center, angle_deg, 1.0)
 
