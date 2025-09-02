@@ -34,8 +34,10 @@ def _rotate_image_resize(image, angle_deg):
     # 对于旋转，新的尺寸就是宽高互换
     if abs(abs(angle_deg) - 90) < 5 or abs(abs(angle_deg) - 270) < 5:
         # 90度或270度旋转，宽高互换
-        new_width = height
-        new_height = width
+        print(f"DEBUG: 90度旋转 - 原始尺寸: ({height}, {width})")
+        new_width = height  # 旋转90度后，高度变成宽度
+        new_height = width  # 旋转90度后，宽度变成高度
+        print(f"DEBUG: 90度旋转 - 新尺寸: ({new_height}, {new_width})")
     elif abs(abs(angle_deg) - 180) < 5:
         # 180度旋转，尺寸不变
         new_width = width
@@ -56,23 +58,34 @@ def _rotate_image_resize(image, angle_deg):
     canvas = np.full((new_height, new_width, 3), 255, dtype=np.uint8)
 
     # 计算原图在新画布上的位置
-    # 需要考虑旋转后图像的偏移
+    # 将原图放置在画布中心
     center_x = new_width // 2
     center_y = new_height // 2
 
-    # 将原图放置在画布中心
+    # 计算图像在画布上的偏移量
     x_offset = center_x - width // 2
     y_offset = center_y - height // 2
 
-    # 确保偏移量合理
+    # 确保偏移量不会导致图像超出画布边界
     x_offset = max(0, min(x_offset, new_width - width))
     y_offset = max(0, min(y_offset, new_height - height))
+
+    # 如果图像比画布大，需要调整放置位置
+    if width > new_width:
+        x_offset = 0
+    if height > new_height:
+        y_offset = 0
 
     # 将原图复制到新画布中心
     try:
         print(f"DEBUG: 复制图像 - canvas.shape={canvas.shape}, image.shape={image.shape}")
         print(f"DEBUG: 偏移量 - x_offset={x_offset}, y_offset={y_offset}")
-        print(f"DEBUG: 目标切片 - [{y_offset}:{y_offset+height}, {x_offset}:{x_offset+width}]")
+        print(f"DEBUG: 图像尺寸 - height={height}, width={width}")
+        target_height = y_offset + height
+        target_width = x_offset + width
+        print(f"DEBUG: 目标范围 - y: {y_offset}:{target_height}, x: {x_offset}:{target_width}")
+        print(f"DEBUG: 检查边界 - canvas_height={canvas.shape[0]}, canvas_width={canvas.shape[1]}")
+        print(f"DEBUG: 目标切片 - [{y_offset}:{target_height}, {x_offset}:{target_width}]")
         canvas[y_offset:y_offset+height, x_offset:x_offset+width] = image
     except ValueError as e:
         print(f"Canvas shape: {canvas.shape}, Image shape: {image.shape}")
