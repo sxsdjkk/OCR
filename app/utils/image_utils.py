@@ -34,10 +34,8 @@ def _rotate_image_resize(image, angle_deg):
     # 对于旋转，新的尺寸就是宽高互换
     if abs(abs(angle_deg) - 90) < 5 or abs(abs(angle_deg) - 270) < 5:
         # 90度或270度旋转，宽高互换
-        print(f"DEBUG: 90度旋转 - 原始尺寸: ({height}, {width})")
         new_width = height  # 旋转90度后，高度变成宽度
         new_height = width  # 旋转90度后，宽度变成高度
-        print(f"DEBUG: 90度旋转 - 新尺寸: ({new_height}, {new_width})")
     elif abs(abs(angle_deg) - 180) < 5:
         # 180度旋转，尺寸不变
         new_width = width
@@ -54,7 +52,6 @@ def _rotate_image_resize(image, angle_deg):
     new_height = max(new_height, 1)
 
     # 创建一个足够大的白色画布
-    print(f"DEBUG: 创建画布 - new_height={new_height}, new_width={new_width}")
     canvas = np.full((new_height, new_width, 3), 255, dtype=np.uint8)
 
     # 计算原图在新画布上的位置
@@ -78,19 +75,8 @@ def _rotate_image_resize(image, angle_deg):
 
     # 将原图复制到新画布中心
     try:
-        print(f"DEBUG: 复制图像 - canvas.shape={canvas.shape}, image.shape={image.shape}")
-        print(f"DEBUG: 偏移量 - x_offset={x_offset}, y_offset={y_offset}")
-        print(f"DEBUG: 图像尺寸 - height={height}, width={width}")
-        target_height = y_offset + height
-        target_width = x_offset + width
-        print(f"DEBUG: 目标范围 - y: {y_offset}:{target_height}, x: {x_offset}:{target_width}")
-        print(f"DEBUG: 检查边界 - canvas_height={canvas.shape[0]}, canvas_width={canvas.shape[1]}")
-        print(f"DEBUG: 目标切片 - [{y_offset}:{target_height}, {x_offset}:{target_width}]")
         canvas[y_offset:y_offset+height, x_offset:x_offset+width] = image
     except ValueError as e:
-        print(f"Canvas shape: {canvas.shape}, Image shape: {image.shape}")
-        print(f"x_offset: {x_offset}, y_offset: {y_offset}")
-        print(f"Target slice: {y_offset}:{y_offset+height}, {x_offset}:{x_offset+width}")
         raise e
 
     # 以画布中心为旋转轴心进行旋转
