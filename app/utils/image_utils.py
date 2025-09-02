@@ -28,85 +28,42 @@ def _rotate_image_resize(image, angle_deg):
         return image
 
     height, width = image.shape[:2]
-    angle_rad = angle_deg * math.pi / 180.0
+    print(f"DEBUG: 开始旋转 - 原始尺寸: ({height}, {width}), 角度: {angle_deg}°")
 
-    # 更简单可靠的边界框计算
-    # 对于旋转，新的尺寸就是宽高互换
-    if abs(abs(angle_deg) - 90) < 5 or abs(abs(angle_deg) - 270) < 5:
-        # 90度或270度旋转，宽高互换
-        print(f"DEBUG: 90度旋转 - 原始尺寸: ({height}, {width})")
-        new_width = height  # 旋转90度后，高度变成宽度
-        new_height = width  # 旋转90度后，宽度变成高度
-        print(f"DEBUG: 90度旋转 - 新尺寸: ({new_height}, {new_width})")
-    elif abs(abs(angle_deg) - 180) < 5:
-        # 180度旋转，尺寸不变
-        new_width = width
-        new_height = height
-    else:
-        # 其他角度，使用几何计算
-        cos_a = abs(math.cos(angle_rad))
-        sin_a = abs(math.sin(angle_rad))
-        new_width = int(width * cos_a + height * sin_a)
-        new_height = int(height * cos_a + width * sin_a)
+    # 直接使用 OpenCV 旋转，自动处理边界
+    center = (width // 2, height // 2)
 
-    # 确保最小尺寸，避免尺寸过小
-    new_width = max(new_width, 1)
-    new_height = max(new_height, 1)
-
-    # 创建一个足够大的白色画布
-    print(f"DEBUG: 创建画布 - new_height={new_height}, new_width={new_width}")
-    canvas = np.full((new_height, new_width, 3), 255, dtype=np.uint8)
-
-    # 计算原图在新画布上的位置
-    # 将原图放置在画布中心
-    center_x = new_width // 2
-    center_y = new_height // 2
-
-    # 计算图像在画布上的偏移量
-    x_offset = center_x - width // 2
-    y_offset = center_y - height // 2
-
-    # 确保偏移量不会导致图像超出画布边界
-    x_offset = max(0, min(x_offset, new_width - width))
-    y_offset = max(0, min(y_offset, new_height - height))
-
-    # 如果图像比画布大，需要调整放置位置
-    if width > new_width:
-        x_offset = 0
-    if height > new_height:
-        y_offset = 0
-
-    # 将原图复制到新画布中心
-    try:
-        print(f"DEBUG: 复制图像 - canvas.shape={canvas.shape}, image.shape={image.shape}")
-        print(f"DEBUG: 偏移量 - x_offset={x_offset}, y_offset={y_offset}")
-        print(f"DEBUG: 图像尺寸 - height={height}, width={width}")
-        target_height = y_offset + height
-        target_width = x_offset + width
-        print(f"DEBUG: 目标范围 - y: {y_offset}:{target_height}, x: {x_offset}:{target_width}")
-        print(f"DEBUG: 检查边界 - canvas_height={canvas.shape[0]}, canvas_width={canvas.shape[1]}")
-        print(f"DEBUG: 目标切片 - [{y_offset}:{target_height}, {x_offset}:{target_width}]")
-        canvas[y_offset:y_offset+height, x_offset:x_offset+width] = image
-    except ValueError as e:
-        print(f"Canvas shape: {canvas.shape}, Image shape: {image.shape}")
-        print(f"x_offset: {x_offset}, y_offset: {y_offset}")
-        print(f"Target slice: {y_offset}:{y_offset+height}, {x_offset}:{x_offset+width}")
-        raise e
-
-    # 以画布中心为旋转轴心进行旋转
-    center = (new_width // 2, new_height // 2)
+    # 计算旋转矩阵
     rotation_matrix = cv2.getRotationMatrix2D(center, angle_deg, 1.0)
 
-    # 应用旋转变换
+    # 计算旋转后的边界框
+    cos_a = abs(math.cos(math.radians(angle_deg)))
+    sin_a = abs(math.sin(math.radians(angle_deg)))
+
+    new_width = int(width * cos_a + height * sin_a)
+    new_height = int(height * cos_a + width * sin_a)
+
+    # 确保最小尺寸
+    new_width = max(new_width, width)
+    new_height = max(new_height, height)
+
+    print(f"DEBUG: 计算边界框 - new_width={new_width}, new_height={new_height}")
+
+    # 调整旋转矩阵的平移部分，以适应新的画布尺寸
+    rotation_matrix[0, 2] += (new_width - width) / 2
+    rotation_matrix[1, 2] += (new_height - height) / 2
+
+    # 应用旋转变换到新尺寸的画布
     rotated_image = cv2.warpAffine(
-        canvas,
+        image,
         rotation_matrix,
         (new_width, new_height),
         flags=cv2.INTER_CUBIC,
         borderMode=cv2.BORDER_CONSTANT,
-        borderValue=(255, 255, 255)
+        borderValue=(255, 255, 255)  # 白色背景
     )
 
+    print(f"DEBUG: 旋转完成 - 结果尺寸: {rotated_image.shape}")
     return rotated_image
 
 
