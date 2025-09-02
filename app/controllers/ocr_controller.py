@@ -76,7 +76,8 @@ async def perform_ocr_file(
         logger.info(f"/ocr_simple/file 耗时: {elapsed:.3f}s (directionCorrection={directionCorrection}, needImg={include_image})")
         return JSONResponse(content=convert_numpy_to_list(structured))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"/ocr_simple/file 处理失败: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post('/ocr_simple/base64')
@@ -107,6 +108,7 @@ async def perform_ocr_base64(
         logger.info(f"/ocr_simple/base64 耗时: {elapsed:.3f}s (directionCorrection={directionCorrection}, needImg={include_image})")
         return JSONResponse(content=convert_numpy_to_list(structured))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"/ocr_simple/base64 处理失败: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 

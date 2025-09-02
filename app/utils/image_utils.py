@@ -17,7 +17,7 @@ def _rotate_image_keep_size(image, angle_deg):
     rotation_matrix = cv2.getRotationMatrix2D(center, angle_deg, 1.0)
     rotated_image = cv2.warpAffine(
         image, rotation_matrix, (width, height),
-        flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_CONSTANT, borderValue=(255, 255, 255)
+        flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE, borderValue=(255, 255, 255)
     )
     return rotated_image
 
