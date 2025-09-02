@@ -139,6 +139,7 @@ def build_items_from_predict_results(predict_results, image=None, directionCorre
         text_val = rec_texts[i] if i < len(rec_texts) else ""
         score_val = rec_scores[i] if i < len(rec_scores) else 1.0
         box = None
+
         if rec_polys and i < len(rec_polys):
             box = ensure_quad_points(rec_polys[i])
         if box is None and rec_boxes and i < len(rec_boxes):
@@ -152,7 +153,6 @@ def build_items_from_predict_results(predict_results, image=None, directionCorre
             'confidence': float(score_val) if isinstance(score_val, (int, float)) else 1.0,
             'bbox': box,
         })
-
     if extracted:
         extracted[-1]['text'] = f"{extracted[-1]['text']}\n"
     return extracted, rotation_angle
