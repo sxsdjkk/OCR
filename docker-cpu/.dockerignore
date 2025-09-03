@@ -1,0 +1,78 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.pytest_cache
+.coverage
+.tox
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.venv
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Docker
+docker-cpu/
+docker/
+Dockerfile.gpu
+docker-compose.gpu.yml
+
+# Documentation
+*.md
+!README.md
+
+# Development files
+test_*.py
+*_test.py
+tests/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Data and models (will be mounted as volumes)
+data/
+models/
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Node modules (if any)
+node_modules/
+
+# Jupyter
+.ipynb_checkpoints

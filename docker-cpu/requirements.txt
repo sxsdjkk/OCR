@@ -1,0 +1,25 @@
+# PaddleOCR and related dependencies
+# paddlepaddle-gpu>=3.0.0  # Installed via wheel file in Dockerfile
+paddleocr>=2.7.0
+paddlex[ocr]>=3.0.0
+
+# FastAPI and web framework dependencies
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+python-multipart>=0.0.6
+pydantic>=2.0.0
+
+# Computer Vision and Image Processing
+opencv-python>=4.8.0
+numpy>=1.24.0
+pillow>=10.0.0
+matplotlib>=3.7.0
+
+# Utilities and HTTP
+requests>=2.31.0
+aiofiles>=23.0.0
+
+# Development and testing (optional)
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+httpx>=0.25.0
